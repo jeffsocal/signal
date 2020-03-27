@@ -60,7 +60,8 @@ Using RandomForest package R::randomForest.
 
 
 ##### example
-`
+
+```
 # import the code
 source("./src/signal.R")
 
@@ -87,4 +88,4 @@ class_model <- signal(
   usr_n_cores = 1,
   usr_verbose = T
 )
-`
+```
