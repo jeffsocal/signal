@@ -19,11 +19,13 @@ source("./src/signal.R")
 # define the data
 r_data <- readRDS("./dat/000_unittest/univariate_100fea-100samples_2sig.R")
 
-r_data$data[,"patient_integer"] <- as.numeric(r_data$data[,'patient_status'] == "disease")
-r_data$data[,"patient_pid"] <- rep(1:(length(r_data$data[,"patient_integer"])/2),2)
-fea <- r_data$features
+# create a binary 0/1 patient status
+r_data$data <- cbind(r_data$data, as.numeric(r_data$data[,'patient_status'] == "disease"))
+colnames(r_data$data)[dim(r_data$data)[2]] <- 'patient_integer'
 
-wtf <- r_data$data[,c("patient_pid","patient_integer")]
+r_data$data <- cbind(r_data$data, rep(1:(length(r_data$data[,"patient_integer"])/2),2))
+colnames(r_data$data)[dim(r_data$data)[2]] <- 'patient_pid'
+fea <- r_data$features
 
 # apply preprocessing 
 modeling_data <- preprocess(r_data$data, fea, "patient_integer")
@@ -42,3 +44,17 @@ class_model <- signal(
   usr_n_cores = 1,
   usr_verbose = T
 )
+
+
+# usr_project = 'unittest'
+# usr_dataset = 'unittest_100x100'
+# usr_n_features = '2'
+# usr_features = 'all'
+# usr_cfv_split = 'patient_pid'
+# usr_method = 'enet'
+# usr_model = 'svm05'
+# usr_n_fold = 10
+# usr_n_reps = 10
+# usr_n_cores = 1
+# usr_verbose = T
+

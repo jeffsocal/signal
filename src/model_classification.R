@@ -71,8 +71,14 @@ model_classification.parallel <- function(i,
   v_fold            <- obj$results[[rep]]$foldAssigments[[fld]]
   fea               <- unlist(obj$results[[rep]][[fld+1]]$features)
   
-  d_tr              <- predict(f_preprocess, dat[-v_fold,])
-  d_ts              <- predict(f_preprocess, dat[v_fold,])
+  # d_tr              <- predict(f_preprocess, dat[-v_fold,])
+  # d_ts              <- predict(f_preprocess, dat[v_fold,])
+
+  d_tr              <- dat[-v_fold,]
+  d_ts              <- dat[v_fold,]
+  
+  # d_tr[,fea]        <- scale(d_tr[,fea])
+  # d_ts[,fea]        <- scale(d_ts[,fea])
   
   out_model <- classifier_model(v_features=fea,
                                 c_predict=prd,

@@ -28,8 +28,8 @@ signal_initalize <- function(d_data,
                              c_split=NULL
 ){
   
-  if ( !is.object(f_preprocess) )
-    stop("data preprocessing must be an object of type prediction")
+  # if ( !is.object(f_preprocess) )
+  #   stop("data preprocessing must be an object of type prediction")
   
   obj <- list(inputs=list(),
               results=list(),

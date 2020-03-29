@@ -64,10 +64,10 @@ signal_final_model <- function(obj){
   
   f_preprocess      <- obj$inputs$preprocess
   prd               <- obj$inputs$predictor
-  dat               <- obj$inputs$data
+  dat <- d_tr       <- obj$inputs$data
   fea               <- obj$final$features
   
-  d_tr              <- predict(f_preprocess, dat)
+  # d_tr              <- predict(f_preprocess, dat)
   
   out_model <- classifier_model(v_features=fea,
                                 c_predict=prd,

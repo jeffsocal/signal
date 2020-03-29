@@ -73,7 +73,8 @@ feature_select.parallel <- function(i,
   fld                   <- m_rf[i,1]
 
   v_fold                <- obj$results[[rep]]$foldAssigments[[fld]]
-  d_train               <- predict(f_preprocess, newdata=d_data[-v_fold,])
+  # d_train               <- predict(f_preprocess, newdata=d_data[-v_fold,])
+  d_train               <- d_data[-v_fold,]
 
 
   # feature SELECTION METHODS

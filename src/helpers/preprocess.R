@@ -13,28 +13,31 @@
 ################################################################################
 
 
+# preprocess <- function(m_data,
+#                        v_features,
+#                        c_predictor = 'patient_integer'){
+#   
+#   r_data <- list()
+#   r_data[['data']] <- m_data
+#   r_data[['preprocess']] <- preProcess(m_data[,v_features], method=c("center", "scale"))
+#   r_data[['features']] <- v_features
+#   r_data[['predict']] <- c_predictor
+#   
+#   return(r_data)
+# }
+
 preprocess <- function(m_data,
                        v_features,
                        c_predictor = 'patient_integer'){
   
-  v_nonfeatures <- setdiff(colnames(m_data), v_features)
-  
-  for ( fea in v_features ) {
-    
-    # MAY produce WARNINGS "NAs introduced by coercion "
-    capture.output(m_data[,fea] <- as.numeric(as.character(m_data[,fea])))
-    
-  }
-  
-  m_data <- m_data[,c(v_nonfeatures, v_features)]
+  m_data[,v_features] <- scale(m_data[,v_features])
   
   r_data <- list()
   r_data[['data']] <- m_data
-  r_data[['preprocess']] <- preProcess(m_data, method=c("center", "scale"))
+  r_data[['preprocess']] <- NULL
   r_data[['features']] <- v_features
   r_data[['predict']] <- c_predictor
   
   return(r_data)
 }
-
 
