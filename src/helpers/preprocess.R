@@ -13,28 +13,14 @@
 ################################################################################
 
 
-# preprocess <- function(m_data,
-#                        v_features,
-#                        c_predictor = 'patient_integer'){
-#   
-#   r_data <- list()
-#   r_data[['data']] <- m_data
-#   r_data[['preprocess']] <- preProcess(m_data[,v_features], method=c("center", "scale"))
-#   r_data[['features']] <- v_features
-#   r_data[['predict']] <- c_predictor
-#   
-#   return(r_data)
-# }
-
-preprocess <- function(m_data,
-                       v_features,
-                       c_predictor = 'patient_integer'){
-  
-  m_data[,v_features] <- scale(m_data[,v_features])
+data_prep <- function(m_data,
+                      v_features,
+                      c_predictor = 'patient_integer',
+                      v_preprocess = c('center', 'scale')){
   
   r_data <- list()
   r_data[['data']] <- m_data
-  r_data[['preprocess']] <- NULL
+  r_data[['preprocess']] <- v_preprocess
   r_data[['features']] <- v_features
   r_data[['predict']] <- c_predictor
   

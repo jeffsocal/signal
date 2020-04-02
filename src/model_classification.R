@@ -63,7 +63,7 @@ model_classification.parallel <- function(i,
   
   classifier_model  <- obj$inputs$model
   
-  f_preprocess      <- obj$inputs$preprocess
+  v_preprocess      <- obj$inputs$preprocess
   prd               <- obj$inputs$predictor
   dat               <- obj$inputs$data
   
@@ -80,16 +80,21 @@ model_classification.parallel <- function(i,
   fea               <- unlist(obj$results[[rep]][[fld+1]]$selection$feature)
   fea               <- fea[1:nfs]
   
-  # preprocess on training data, apply to both
-  f_preprocess      <- preProcess(dat[-v_fold,], c('center', 'scale'))
+  d_train            <- dat[-v_fold,]
+  d_test             <- dat[v_fold,]
   
-  d_tr              <- predict(f_preprocess, dat[-v_fold,])
-  d_ts              <- predict(f_preprocess, dat[v_fold,])
-
+  if(!'none' %in% v_preprocess){
+    # preprocess on training data, apply to both
+    f_preprocess       <- preProcess(d_train, c('center', 'scale'))
+    
+    d_train            <- predict(f_preprocess, d_train)
+    d_test             <- predict(f_preprocess, d_test)
+  }
+  
   out_model <- classifier_model(v_features=fea,
                                 c_predict=prd,
-                                d_train=d_tr,
-                                d_test=d_ts,
+                                d_train=d_train,
+                                d_test=d_test,
                                 ...)
   
   return(out_model)

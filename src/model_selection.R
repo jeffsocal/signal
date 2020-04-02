@@ -34,6 +34,7 @@ feature_select.parallel <- function(i,
   c_predict          <- obj$inputs$predict
   v_features         <- obj$inputs$features
   n_sel_fea          <- obj$inputs$nfeatures
+  v_preprocess       <- obj$inputs$preprocess
   
   f_selects          <- obj$inputs$fselect
   
@@ -51,12 +52,17 @@ feature_select.parallel <- function(i,
   fld                <- m_rf[i,1]
   
   v_fold             <- obj$results[[rep]]$foldAssigments[[fld]]
-  # preprocess on training data, apply to both
-  f_preprocess       <- preProcess(d_data[-v_fold,], c('center', 'scale'))
   
-  d_train            <- predict(f_preprocess, d_data[-v_fold,])
-  d_test             <- predict(f_preprocess, d_data[v_fold,])
+  d_train            <- d_data[-v_fold,]
+  d_test             <- d_data[v_fold,]
   
+  if(!'none' %in% v_preprocess){
+    # preprocess on training data, apply to both
+    f_preprocess       <- preProcess(d_train, c('center', 'scale'))
+    
+    d_train            <- predict(f_preprocess, d_train)
+    d_test             <- predict(f_preprocess, d_test)
+  }
   
   # feature SELECTION METHODS: returns a tibble with columns; feature, rank
   v_fea_sel <- v_features
