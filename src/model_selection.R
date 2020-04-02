@@ -58,7 +58,7 @@ feature_select.parallel <- function(i,
   
   if(!'none' %in% v_preprocess){
     # preprocess on training data, apply to both
-    f_preprocess       <- preProcess(d_train, c('center', 'scale'))
+    f_preprocess       <- preProcess(d_train, v_preprocess)
     
     d_train            <- predict(f_preprocess, d_train)
     d_test             <- predict(f_preprocess, d_test)
