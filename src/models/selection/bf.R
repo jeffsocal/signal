@@ -14,7 +14,7 @@
 
 library(parallel)
 
-parallelBF <- function(v_features=c(),
+bf_sel <- function(v_features=c(),
                        c_predict='predict',
                        d_data=c(),
                        n_comb=2,
@@ -31,7 +31,7 @@ parallelBF <- function(v_features=c(),
   m_combs               <- t(combn(v_features, n_comb))
 
   l_tt <- mclapply(1:n_population,
-                   simpleSVM,
+                   bf_svm,
                    m_combs=m_combs,
                    c_predict=c_predict,
                    d_data=d_data,
@@ -69,7 +69,7 @@ parallelBF <- function(v_features=c(),
 
 }
 
-simpleSVM <- function(x=1,
+bf_svm <- function(x=1,
                       m_combs,
                       v_features=m_combs[x,],
                       c_predict,

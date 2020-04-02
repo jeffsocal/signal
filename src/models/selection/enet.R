@@ -16,38 +16,21 @@
 
 library(elasticnet)
 
-simpleENet <- function(v_features=c(),
+enet_sel <- function(v_features=c(),
                        c_predict='predict',
                        d_data=c(),
-                       n_features=10,
-                       returnTop=NULL,
                        returnType='table',
                        n_cores=1){
 
-  if(is.null(returnTop))
-    returnTop <- n_features
-
-  returnTop             <- min(returnTop, length(v_features))
 
   d_data[,c_predict] <- as.numeric(d_data[,c_predict] == unique(d_data[,c_predict])[2] )
-  obj_enet <<- enet(as.matrix(d_data[,v_features]), d_data[,c_predict])
+  obj_enet <- enet(as.matrix(d_data[,v_features]), d_data[,c_predict])
 
-  d_enet <- data.frame(feature=as.character(names(obj_enet$meanx)),
-                       enet_score=obj_enet$normx)
-
-  d_enet <- d_enet[order(-d_enet$enet_score),]
-
-
-  if( is.numeric(returnTop) ) {
-    d_enet <- d_enet[1:returnTop,]
-  } else {
-    stop(paste0("returnTop: '", returnTop, "' not valid, must be as.interger()"))
-  }
-
-  if( returnType == 'table')
-    return(d_enet)
-
-  if( returnType == 'vector')
-    return(as.character(d_enet$feature))
+  out <- as_tibble(obj_enet[c('normx','meanx')]) %>% 
+    mutate(feature = names(obj_enet$meanx)) %>% 
+    arrange(desc(meanx)) %>% 
+    mutate(rank = row_number())
+  
+  return(out)
 
 }

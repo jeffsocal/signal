@@ -15,73 +15,33 @@
 library(caret)
 library(randomForest)
 
-rf <- function(v_features,
+rf_sel <- function(v_features,
                c_predict,
                d_data,
-               n_features=10,
                c_method="boot",
                f_function=rfFuncs,
                ...) {
 
-  # list of functions
-  #     linear regression:        lmFuncs
-  #     random forests:           rfFuncs
-  #     naive Bayes:              nbFuncs
-  #     bagged trees:             treebagFuncs
-  #     caret's train function:   caretFuncs
-
   f_control <- rfeControl(functions = f_function,
                           method = c_method,
-                          repeats = 10,
+                          repeats = 3,
                           verbose = F,
                           allowParallel = FALSE)
 
   rfe_profile <- rfe(d_data[,v_features],
                      d_data[,c_predict],
-                     sizes = n_features,
+                     sizes = length(v_features),
                      rfeControl = f_control)
 
-  d_fea <- as.data.frame(
-    summary(
-      as.factor(
-        rfe_profile$variables[rfe_profile$variables$Variables == n_features,]$var
-        )
-      )
-    )
-  colnames(d_fea)[1] <- 'count'
-  v_fea_sel <- rownames(d_fea)[order(-d_fea$count)][1:n_features]
-
-  return(as.character(v_fea_sel))
-
-}
-
-rffs <- function(v_features,
-               c_predict,
-               d_data,
-               n_features=10,
-               c_method="boot",
-               f_function=rfFuncs,
-               ...) {
-
-  # list of functions
-  #     linear regression:        lmFuncs
-  #     random forests:           rfFuncs
-  #     naive Bayes:              nbFuncs
-  #     bagged trees:             treebagFuncs
-  #     caret's train function:   caretFuncs
-
-  f_control <- rfeControl(functions = f_function,
-                          method = c_method,
-                          repeats = 10,
-                          verbose = F,
-                          allowParallel = FALSE)
-
-  rfe_profile <- rfe(d_data[,v_features],
-                     d_data[,c_predict],
-                     sizes = 1:20,
-                     rfeControl = f_control)
-
-
-  return(as.character(rfe_profile$optVariables))
+  out <- as_tibble(rfe_profile$fit$importance) %>%
+    mutate(feature = rownames(rfe_profile$fit$importance)) %>%
+    select(
+      feature,
+      IncMSE = `%IncMSE`,
+      IncNodePurity
+      ) %>%
+    mutate(rank = row_number())
+  
+  return(out)
 
 }

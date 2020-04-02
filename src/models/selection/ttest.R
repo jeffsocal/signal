@@ -12,79 +12,109 @@
 # DESC:     given a data matrix of disease/contol w/ measurements ~ classify
 ################################################################################
 
-library(parallel)
-
-parallelTTest <- function(v_features=c(),
-                          c_predict='predict',
-                          d_data=c(),
-                          n_features=10,
-                          returnTop=NULL,
-                          returnType='table',
-                          n_cores=1){
-
-  if(is.null(returnTop))
-    returnTop <- n_features
-
-  returnTop <- min(returnTop, length(v_features))
-
-  l_tt <- mclapply(1:length(v_features),
-                   simpleTTest,
+ttest_sel <- function(v_features=c(),
+                      c_predict='predict',
+                      d_data=c()){
+  
+  l_tt <- lapply(1:length(v_features),
+                   ttest_wilcox,
                    v_features=v_features,
                    c_predict=c_predict,
-                   d_data=d_data,
-                   mc.cores=n_cores)
-
+                   d_data=d_data)
+  
   v_pvals <- unlist(l_tt)
-
-  d_pvals <- data.frame(feature=v_features,pval=v_pvals)
-  d_pvals <- d_pvals[order(d_pvals$pval),]
-  d_pvals$p.adjust.bh <- p.adjust(d_pvals$pval, method='BH')
-
-  if( grepl(returnTop,'significant') ){
-    d_pvals <- d_pvals[d_pvals$p.adjust.bh <= 0.05,]
-  } else if( is.numeric(returnTop) ) {
-    d_pvals <- d_pvals[1:returnTop,]
-  } else {
-    stop(paste0("returnTop: '", returnTop, "' not valid, must be 'sig' or as.interger()"))
-  }
-
-  if( returnType == 'table')
-    return(d_pvals)
-
-  if( returnType == 'vector')
-    return(as.character(d_pvals$feature))
-
+  
+  t_pvals <- tibble(
+    feature = names(v_pvals),
+    p_value = v_pvals,
+    p_value_adj = p.adjust(v_pvals, method='BH') 
+  ) %>%
+    arrange(p_value_adj) %>%
+    mutate(rank = row_number())
+  
+  
+  # table of features and values with a rank column  
+  return(t_pvals)
+  
 }
 
-simpleTTest <- function(x=1,
-                        v_features,
-                        c_feature=v_features[x],
-                        c_predict,
-                        d_data
+ttest_wilcox <- function(x=1,
+                         v_features,
+                         c_feature=v_features[x],
+                         c_predict,
+                         d_data
 ) {
-
+  
   predictors <- unique(d_data[,c_predict])
   v_class_a <- which(d_data[,c_predict] == predictors[1])
   v_class_b <- which(d_data[,c_predict] == predictors[2])
-
+  
   v_var_a <- d_data[v_class_a, c_feature]
   v_var_b <- d_data[v_class_b, c_feature]
-
+  
   result = tryCatch({
+    
     l_ttest <- wilcox.test(v_var_a, v_var_b)
     this_pval <- l_ttest$p.val
+    
     if( is.na(this_pval) | this_pval == 1) {
       this_pval <- 1
     }
-
-    return(this_pval)
+    
+    l <- list()
+    l[[c_feature]] <- this_pval
+    return(l)
   }, warning = function(w) {
-    return(1)
+    l <- list()
+    l[[c_feature]] <- 1
+    return(l)
   }, error = function(e) {
-    return(1)
+    l <- list()
+    l[[c_feature]] <- 1
+    return(l)
   }, finally = {
-
   })
-
-
+  
+  
 }
+
+# ttest_wilcox <- function(x=1,
+#                          v_features,
+#                          c_feature=v_features[x],
+#                          c_predict,
+#                          d_data
+# ) {
+#   
+#   predictors <- unique(d_data[,c_predict])
+#   v_class_a <- which(d_data[,c_predict] == predictors[1])
+#   v_class_b <- which(d_data[,c_predict] == predictors[2])
+#   
+#   v_var_a <- d_data[v_class_a, c_feature]
+#   v_var_b <- d_data[v_class_b, c_feature]
+#   
+#   result = tryCatch({
+#     l_ttest <- wilcox.test(v_var_a, v_var_b)
+#     this_pval <- l_ttest$p.val
+#     
+#     if( is.na(this_pval) | this_pval == 1) {
+#       this_pval <- 1
+#     }
+#     
+#     names(this_pval) <- c_feature
+#     return(this_pval)
+#   }, warning = function(w) {
+#     this_pval <- 1
+#     names(this_pval) <- c_feature
+#     return(this_pval)
+#   }, error = function(e) {
+#     this_pval <- 1
+#     names(this_pval) <- c_feature
+#     return(this_pval)
+#   }, finally = {
+#     this_pval <- 1
+#     names(this_pval) <- c_feature
+#     return(this_pval)
+#   })
+#   
+#   
+# }

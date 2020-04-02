@@ -38,15 +38,15 @@ signal_build <- function(obj,
 
   #run ROC performance estimation
   obj <- signal_roc(obj)
-
+  
   # build the final feature frequency
   obj <- signal_final_freq(obj)
   
   # build the final model
   obj <- signal_final_model(obj)
-
+  
   obj$timing$end <- Sys.time()
-
+  
   return(obj)
 }
 

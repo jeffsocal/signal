@@ -59,14 +59,15 @@ saveRDS(f_data, "./dat/000_unittest/univariate_100fea-100samples_2sig.R")
 # Create a random normaly-distributed data set with 2 interacting
 # features, with positive association
 f_data <- data_simulate(data_type   ='binary-x',
-                         n_features  = 5000,
-                         n_samples   = 250,
+                         n_features  = 500,
+                         n_samples   = 120,
                          mean_value  = 10,
                          cv_value    = 0.2,
                          diff_value  = 1.5,
                          noise       = 0.2,
                          offset      = 0.0)
 
+saveRDS(f_data, "./dat/000_unittest/binary-x_500fea-120samples.R")
 # works only for two features, in this case the target_features
 # plot the two target_features (i.e. the features chosen to interact)
 

@@ -27,32 +27,30 @@ signal_final_freq <- function(obj){
   n_folds     <- obj$inputs$folds
   n_reps      <- obj$inputs$reps
   
-  d_data[,c_predict] <- as.factor(d_data[,c_predict])
+  obj[['final']] <- list() 
   
-  d_freq <- c()
-  # REPS
-  for ( r in names(obj$results) ) {
+  m_rf <- expand.grid(1:obj$inputs$folds,
+                      1:obj$inputs$reps)
+  i_rf <- 1:dim(m_rf)[1]
+  
+  l_freq <- list()
+  for ( i in i_rf ){
+    r <- m_rf[i,2]
+    f <- m_rf[i,1]
     
-    # FOLDS
-    for ( f in names(obj$results[[r]][-1]) ) {
-      
-      d_freq <- rbind(d_freq,
-                      data.frame(
-                        feature=obj$results[[r]][[f]]$features,
-                        replicate=r,
-                        fold=f))
-    }
+    l_freq[[i]] <- obj$results[[r]][[f]]$selection
   }
   
-  d_f_rep <- ddply(d_freq, c('feature', 'replicate'), summarize, count=length(feature))
-  d_f_all <- ddply(d_f_rep, c('feature'), summarize, count=median(count))
-  d_f_rep$freq <- d_f_rep$count / n_reps
+  d_freq <- l_freq %>% 
+    bind_rows() %>%
+    group_by(feature) %>%
+    summarise(
+      num_rank = length(rank),
+      frq_rank = length(rank) / length(l_freq),
+      min_rank = min(rank)) %>%
+    arrange(desc(frq_rank), min_rank)
   
-  d_f_all <- d_f_all[order(-d_f_all$count),]
-  
-  obj[['final']] <- list()
-  obj$final$features <- as.character(d_f_all$feature[1:obj$inputs$nfeatures])
-  
+  obj$final$features <- d_freq
   return(obj)
 }
 
@@ -64,31 +62,42 @@ signal_final_model <- function(obj){
   
   f_preprocess      <- obj$inputs$preprocess
   prd               <- obj$inputs$predictor
-  dat <- d_tr       <- obj$inputs$data
-  fea               <- obj$final$features
+  dat               <- obj$inputs$data
+  nfs               <- obj$inputs$nfeatures
   
-  # d_tr              <- predict(f_preprocess, dat)
+  fea              <- obj$final$features$feature
   
-  out_model <- classifier_model(v_features=fea,
-                                c_predict=prd,
-                                d_train=d_tr,
-                                d_test=d_tr)
+  # preprocess on training data, apply to both
+  f_preprocess      <- preProcess(dat, c('center', 'scale'))
+  d_tr              <- predict(f_preprocess, dat)
   
-  obj$final$classifier <- out_model$classifier
-  obj$final[['cutoffs']] <- list()
-  
-  # OPTIMAL
-  perf <- performance(out_model$pred, "cost")
-  obj$final$cutoffs$optimal <- as.numeric(out_model$pred@cutoffs[[1]][which.min(perf@y.values[[1]])])
-  
-  # HIGHEST ACCURACY
-  perf <- performance(out_model$pred, measure = "acc")
-  ind <- which.max( slot(perf, "y.values")[[1]] )
-  acc <- slot(perf, "y.values")[[1]][ind]
-  cutoff <- slot(perf, "x.values")[[1]][ind]
-  obj$final$cutoffs$accuracy <- as.numeric(cutoff)
-  
-  obj$final$max_accuracy <- as.numeric(acc)
+  obj$final$classifier <- list()
+  for(nf in nfs){
+    
+    out_model <- classifier_model(v_features=fea[1:nf],
+                                  c_predict=prd,
+                                  d_train=d_tr,
+                                  d_test=d_tr)
+    
+    cls <- list()
+    cls$model <- out_model
+    cls$cutoffs <- list()
+    
+    # OPTIMAL
+    perf <- performance(out_model$pred, "cost")
+    cls$cutoffs$optimal <- as.numeric(out_model$pred@cutoffs[[1]][which.min(perf@y.values[[1]])])
+    
+    # HIGHEST ACCURACY
+    perf <- performance(out_model$pred, measure = "acc")
+    ind <- which.max( slot(perf, "y.values")[[1]] )
+    acc <- slot(perf, "y.values")[[1]][ind]
+    cutoff <- slot(perf, "x.values")[[1]][ind]
+    cls$cutoffs$accuracy <- as.numeric(cutoff)
+    cls$cutoffs$max_accuracy <- as.numeric(acc)
+    
+    obj$final$classifier[[nf]] <- cls
+    
+  }
   
   return(obj)
   

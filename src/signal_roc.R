@@ -28,59 +28,61 @@ signal_roc <- function(obj){
   
   n_folds             <- obj$inputs$folds
   n_reps              <- obj$inputs$reps
+  n_feas              <- obj$inputs$nfeatures
   
   d_data[,c_predict]  <- as.factor(d_data[,c_predict])
-
-  d_pred <- list()
-  # REPS
-  for ( r in names(obj$results) ) {
-    v_smpl <- c()
-    v_pred <- c()
-    
-    # FOLDS
-    for ( f in names(obj$results[[r]][-1]) ) {
-      this_pred <- obj$results[[r]][[f]]$prediction
+  
+  for(n_fea in n_feas){
+    d_pred <- list()
+    # REPS
+    for ( r in names(obj$results) ) {
+      v_smpl <- c()
+      v_pred <- c()
       
-      smpl <- which(rownames(d_data) %in% (names(unlist(this_pred))))
-      pred <- as.vector(unlist(this_pred))
-      v_smpl <- c(v_smpl, as.numeric(as.character(smpl)) )
-      v_pred <- c(v_pred, pred )
+      # FOLDS
+      for ( f in names(obj$results[[r]][-1]) ) {
+        this_pred <- obj$results[[r]][[f]]$classification[[n_fea]]$prediction
+        
+        smpl <- which(rownames(d_data) %in% (names(unlist(this_pred))))
+        pred <- as.vector(unlist(this_pred))
+        v_smpl <- c(v_smpl, as.numeric(as.character(smpl)) )
+        v_pred <- c(v_pred, pred )
+      }
+      
+      d_pred[[r]] <- data.frame(
+        sample = v_smpl, 
+        pred = v_pred,
+        rep = r) %>% mutate(rep = as.character(rep))
+      
     }
     
-    d_pred[[r]] <- data.frame(
-      sample = v_smpl, 
-      pred = v_pred,
-      rep = r) %>% mutate(rep = as.character(rep))
+    d_pred <- d_pred %>% 
+      bind_rows() %>%
+      mutate(row_id = dplyr::row_number())
     
+    d_pred <- d_pred %>%
+      mutate(obs = d_data[d_pred$sample,c_predict]) %>%
+      spread(key='rep', value='pred') %>%
+      as.data.frame()
+    
+    m_roc <- as.matrix(d_pred[,names(obj$results)])
+    suppressWarnings(storage.mode(m_roc) <- "numeric")
+    m_obs <- matrix(as.numeric(d_pred[,'obs']), nrow=dim(m_roc)[1], ncol=dim(m_roc)[2])
+    
+    pred <- prediction(m_roc, m_obs)
+    perf <- performance(pred, "tpr", "fpr")
+    
+    pauc <- performance(pred, "auc")
+    
+    obj_auc <- mean(unlist(pauc@y.values))
+    obj_auc_sd <- sd(unlist(pauc@y.values))
+    
+    obj[['performance']][[n_fea]] <- list()
+    obj[['performance']][[n_fea]]$matrix_predictions <- d_pred
+    obj[['performance']][[n_fea]]$roc_pred <- pred
+    obj[['performance']][[n_fea]]$roc_perf <- perf
+    obj[['performance']][[n_fea]]$roc_auc <- unlist(pauc@y.values)
   }
-  
-  d_pred <- d_pred %>% 
-    bind_rows() %>%
-    mutate(row_id = row_number())
-  
-  d_pred <- d_pred %>%
-    mutate(obs = d_data[d_pred$sample,c_predict]) %>%
-    spread(key='rep', value='pred') %>%
-    as.data.frame()
-  
-  m_roc <- as.matrix(d_pred[,names(obj$results)])
-  suppressWarnings(storage.mode(m_roc) <- "numeric")
-  m_obs <- matrix(as.numeric(d_pred[,'obs']), nrow=dim(m_roc)[1], ncol=dim(m_roc)[2])
-  
-  pred <- prediction(m_roc, m_obs)
-  perf <- performance(pred, "tpr", "fpr")
-  
-  pauc <- performance(pred, "auc")
-  
-  obj_auc <- mean(unlist(pauc@y.values))
-  obj_auc_sd <- sd(unlist(pauc@y.values))
-  
-  obj[['performance']] <- list()
-  obj[['performance']]$matrix_predictions <- d_pred
-  obj[['performance']]$roc_pred <- pred
-  obj[['performance']]$roc_perf <- perf
-  obj[['performance']]$roc_auc <- unlist(pauc@y.values)
-  
   return(obj)
 }
 

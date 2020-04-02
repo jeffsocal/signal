@@ -137,15 +137,16 @@ signal <- function(
   user_info['n_reps'] <- usr_n_reps
   user_info['n_cores'] <- usr_n_cores
   
-  test_n <- c(2:20)
+  # expand out the n feaures to test for
+  n_sel_features <- c(2:20)
   if( grepl("^[0-9]+$", usr_n_features) ) {
-    test_n <- as.numeric(usr_n_features)
+    n_sel_features <- as.numeric(usr_n_features)
   } else if( grepl(",", usr_n_features) ) {
-    test_n <- as.numeric(unlist(strsplit(usr_n_features, ",")))
-    test_n <- test_n[test_n <= length(fea)]
+    n_sel_features <- as.numeric(unlist(strsplit(usr_n_features, ",")))
+    n_sel_features <- n_sel_features[n_sel_features <= length(fea)]
   } else if( grepl(":", usr_n_features) ) {
-    test_n <- as.numeric(unlist(strsplit(usr_n_features, ":")))
-    test_n <- test_n[1]:test_n[2]
+    n_sel_features <- as.numeric(unlist(strsplit(usr_n_features, ":")))
+    n_sel_features <- n_sel_features[1]:n_sel_features[2]
   }
   
   if( usr_verbose == T){
@@ -166,63 +167,67 @@ signal <- function(
     print_div()
   }
   
-  for ( nfeatures in test_n ){
+  
+  mat <- mod_data$data
+  fea <- mod_data$features
+  pre <- mod_data$preprocess
+  prd <- mod_data$predict
+  
+  lm_start_time <- Sys.time()
+  if( usr_verbose == T)
+    cat("start", usr_n_features, "features .. ")
+  
+  obj <- signal_initalize(d_data=mat,
+                          c_predict=prd,
+                          v_features=fea,
+                          b_verbose=usr_verbose,  # <-- turn off for this type of iteration
+                          n_reps=usr_n_reps,      # <-- adjust for testing 
+                          n_folds=usr_n_fold,
+                          n_features=n_sel_features,
+                          f_preprocess=pre,
+                          n_cores=usr_n_cores,
+                          l_usr_info=user_info,
+                          c_split=usr_cfv_split
+  )
+  
+  # set up the feature selection
+  obj <- set_feature_selection(obj, usr_method)
+  
+  # set up the feature classification
+  obj <- set_model_classification(obj, usr_model)
+  
+  # RUN the classification
+  obj <- signal_build(obj)
+  
+  obj$timing$duration <- (Sys.time() - lm_start_time)
+  cat(obj$timing$duration, 
+      attr(obj$timing$duration,"units"), "\n")
+  
+  auc_mean_best <- 0
+  for(nf in n_sel_features){
     
-    mat <- mod_data$data
-    fea <- mod_data$features
-    pre <- mod_data$preprocess
-    prd <- mod_data$predict
-    nfeatures <- min(nfeatures, length(fea))
+    auc_mean <- round(mean(obj$performance[[nf]]$roc_auc),3)
+    auc_sd <- round(sd(obj$performance[[nf]]$roc_auc),3)
     
+    cat("\t", nf, "features  AUC:", auc_mean, "+/-", auc_sd," \n")
     
-    lm_start_time <- Sys.time()
-    if( usr_verbose == T)
-      cat("start", nfeatures, "features .. ")
-    
-    obj <- signal_initalize(d_data=mat,
-                            c_predict=prd,
-                            v_features=fea,
-                            b_verbose=usr_verbose,  # <-- turn off for this type of iteration
-                            n_reps=usr_n_reps,      # <-- adjust for testing 
-                            n_folds=usr_n_fold,
-                            n_features=nfeatures,
-                            f_preprocess=pre,
-                            n_cores=usr_n_cores,
-                            l_usr_info=user_info,
-                            c_split=usr_cfv_split
-    )
-    
-    # set up the feature selection
-    obj <- set_feature_selection(obj, usr_method)
-
-    # set up the feature classification
-    obj <- set_model_classification(obj, usr_model)
-    
-    # RUN the classification
-    obj <- signal_build(obj)
-    
-    obj$timing$duration <- (Sys.time() - lm_start_time)
-    
-    auc <- round(median(obj$performance$roc_auc),3)
-    
-    if( usr_verbose == T)
-      cat("\n  AUC:", auc, "..", obj$timing$duration, "sec \n")
-    
-    
-    options(warn=-1)
-    
-    # SAVE the data
-    saveResultObject(obj, 
-                     usr_project, 
-                     usr_dataset,
-                     paste0(usr_features, 
-                            "_cfv_", usr_n_fold, "x", usr_n_reps,
-                            "_top_", nfeatures, 
-                            "_", gsub(",", "-", usr_method), 
-                            "_auc", auc))
-    options(warn=0)
-    
+    auc_mean_best <- max(auc_mean_best, auc_mean)
   }
+  
+  options(warn=-1)
+  
+  # SAVE the data
+  saveResultObject(obj, 
+                   usr_project, 
+                   usr_dataset,
+                   paste0(usr_features, 
+                          "_cfv_", usr_n_fold, "x", usr_n_reps,
+                          "_fea_", min(n_sel_features),
+                          "-", max(n_sel_features),
+                          "_", gsub(",", "-", usr_method), 
+                          "_auc", auc_mean_best))
+  options(warn=0)
+  
   return(obj)
 }
 
