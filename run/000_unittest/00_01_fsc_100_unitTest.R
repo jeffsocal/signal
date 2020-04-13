@@ -17,7 +17,7 @@ rm(list=ls())
 source("./src/signal.R")
 
 # define the data
-data <- readRDS("./dat/000_unittest/univariate_100fea-100samples_2sig.R")
+# data <- readRDS("./dat/000_unittest/univariate_100fea-100samples_2sig.R")
 data <- readRDS("./dat/000_unittest/binary-x_500fea-120samples.R")
 
 dat <- data$data
@@ -33,7 +33,7 @@ dat <- cbind(dat, rep(1:(length(dat[,"patient_integer"])/2),2))
 colnames(dat)[dim(dat)[2]] <- 'patient_pid'
 
 # apply preprocessing 
-modeling_data <- preprocess(dat, fea, "patient_integer")
+modeling_data <- data_prep(dat, fea, "patient_integer")
 
 
 class_model <- signal(
@@ -43,7 +43,7 @@ class_model <- signal(
   usr_n_features = '2:3',
   usr_features = 'all',
   usr_cfv_split = 'patient_pid',
-  usr_method = 'rf',
+  usr_method = 'ga',
   usr_model = 'svm05',
   # usr_model = 'ksvm61',
   usr_n_fold = 5,

@@ -32,17 +32,20 @@ mcl_mine <- function (i, dat, set_list) {
 }
 
 mine_sel <- function(v_features=c(),
-                         c_predict='predict',
-                         d_data=c()){
+                     c_predict='predict',
+                     d_data=c(),
+                     n_cores=1){
   
   set_list <- combn(v_features, 2)
   set_list <- t(set_list)
   i_set_list <- 1:dim(set_list)[1]
   
-  d_mine <- lapply(i_set_list,
+  d_mine <- mclapply(i_set_list,
                      mcl_mine,
                      dat=d_data,
-                     set_list=set_list)
+                     set_list=set_list,
+                     mc.cores = n_cores
+  )
   
   d_mine <- d_mine %>% 
     bind_rows() %>% 
@@ -59,5 +62,5 @@ mine_sel <- function(v_features=c(),
     arrange(desc(mic), desc(mas)) %>%
     mutate(rank = row_number())
   
-    return(d_mine)
+  return(d_mine)
 }

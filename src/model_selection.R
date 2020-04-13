@@ -28,6 +28,7 @@ library(doParallel)
 
 feature_select.parallel <- function(i,
                                     obj,
+                                    n_fun_cores = 1,
                                     ...){
   
   
@@ -37,7 +38,7 @@ feature_select.parallel <- function(i,
   v_preprocess       <- obj$inputs$preprocess
   
   f_selects          <- obj$inputs$fselect
-  
+  f_selPars          <- obj$inputs$fselParallel
   n_fselTop          <- obj$inputs$fselTopN
   f_models           <- obj$inputs$model
   
@@ -70,6 +71,7 @@ feature_select.parallel <- function(i,
     
     f_select_name <- names(f_selects)[i_fsel]
     f_select <- f_selects[[f_select_name]]
+    f_sel_par <- f_selPars[[f_select_name]]
     
     n_topFeatures <- max(n_sel_fea)*(length(f_selects)-(i_fsel-1))
     
@@ -78,7 +80,8 @@ feature_select.parallel <- function(i,
     
     t_fea_sel <- f_select(v_features=v_fea_sel,
                           c_predict=c_predict,
-                          d_data=d_train)
+                          d_data=d_train,
+                          n_cores = f_sel_par)
     
     v_fea_sel <- t_fea_sel[1:n_topFeatures,]$feature %>% as.character()
     
@@ -87,7 +90,6 @@ feature_select.parallel <- function(i,
 }
 
 feature_select <- function(obj,
-                           n_cores=detectCores()-1,
                            fsel_parallel=feature_select.parallel,
                            ...) {
   
@@ -102,10 +104,15 @@ feature_select <- function(obj,
   # l_features <- foreach(i=i_rf) %dopar% 
   #   fsel_parallel(i, obj)
   
+  # one of the selection methods should advantage the cores
+  n_sel_cores = obj$inputs$cores
+  if(max(unlist(obj$inputs$fselParallel)) > 1)
+    n_sel_cores = 1
+  
   l_features <- mclapply(i_rf,
-                         feature_select.parallel,
+                         fsel_parallel,
                          obj=obj,
-                         mc.cores=n_cores)
+                         mc.cores=n_sel_cores)
   
   for ( i in i_rf ){
     rep <- m_rf[i,2]
@@ -137,13 +144,11 @@ set_feature_selection <- function(obj,
     
     bf = function(...) bf_sel(
       returnType='vector',
-      n_cores=1,
       ...),
     
     ga = function(...) ga_sel(
       n_features=max(obj$inputs$nfeatures),
       n_max_generations=20,
-      n_cores=1,
       seed_method='rand',
       seed_n_comb=2,
       seed_n_limit=1e3,
@@ -160,6 +165,15 @@ set_feature_selection <- function(obj,
     ga = NA
   )
   
+  l_sel_parallel <- list(
+    rf = 1,
+    ttest = 1,
+    mine = obj$inputs$cores,
+    enet = 1,
+    bf = obj$inputs$cores,
+    ga = 1
+  )
+  
   for ( mth in unlist(strsplit(use_method, ",")) ){
     if( grepl(":", mth) ){
       mth <- unlist(strsplit(mth, ":"))
@@ -170,6 +184,7 @@ set_feature_selection <- function(obj,
   
   # feature SELECTION
   obj$inputs$fselect <- l_sel_func[fsel]
+  obj$inputs$fselParallel <- l_sel_parallel[fsel]
   obj$inputs$fselTopN <- l_sel_returnTop[fsel]
   
   return(obj)

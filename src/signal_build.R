@@ -31,10 +31,10 @@ signal_build <- function(obj,
 ){
 
   # run feature selection
-  obj <- feature_select(obj, n_cores=obj$inputs$cores)
+  obj <- feature_select(obj)
 
   # run classification
-  obj <- model_classification(obj, n_cores=obj$inputs$cores)
+  obj <- model_classification(obj)
 
   #run ROC performance estimation
   obj <- signal_roc(obj)

@@ -20,7 +20,7 @@ enet_sel <- function(v_features=c(),
                        c_predict='predict',
                        d_data=c(),
                        returnType='table',
-                       n_cores=1){
+                       ...){
 
 
   d_data[,c_predict] <- as.numeric(d_data[,c_predict] == unique(d_data[,c_predict])[2] )

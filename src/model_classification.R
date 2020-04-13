@@ -23,9 +23,10 @@ library(parallel)
 library(e1071)
 
 model_classification <- function(obj,
-                                 n_cores=detectCores()-1,
                                  ...) {
-  
+
+  n_cores = obj$inputs$cores
+    
   # expand grid to reps|folds|features
   m_rf <- expand.grid(1:obj$inputs$folds,
                       1:obj$inputs$reps,

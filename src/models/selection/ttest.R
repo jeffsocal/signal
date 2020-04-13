@@ -14,7 +14,8 @@
 
 ttest_sel <- function(v_features=c(),
                       c_predict='predict',
-                      d_data=c()){
+                      d_data=c(),
+                      ...){
   
   l_tt <- lapply(1:length(v_features),
                    ttest_wilcox,
