@@ -28,6 +28,10 @@ mcl_mine <- function (i, dat, set_list) {
   w$FEATURE_A <- as.character(a)
   w$FEATURE_B <- as.character(b)
   
+  w <- w %>% as_tibble() %>%
+    arrange(desc(MIC), desc(MAS)) %>%
+    head(100)
+  
   return(w)
 }
 
