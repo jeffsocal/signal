@@ -16,7 +16,7 @@ library(ggplot2)
 library(tidyverse)
 source("./src/plot_annotations.R")
 
-plot_freqrank <- function(obj, annotate = F){
+plot_freqrank <- function(obj, features = 2, annotate = F){
   
   
   d_data      <- obj$inputs$data
@@ -38,9 +38,14 @@ plot_freqrank <- function(obj, annotate = F){
     # FOLDS
     for ( f in names(obj$results[[r]][-1]) ) {
       
+      used_fea <- obj$results[[r]][[f]]$selection %>% 
+        filter(rank <= features) %>%
+        select(feature) %>%
+        unlist()
+      
       d_freq <- rbind(d_freq,
                       data.frame(
-                        feature=obj$results[[r]][[f]]$features,
+                        feature=used_fea,
                         replicate=r,
                         fold=f))
     }
@@ -55,7 +60,7 @@ plot_freqrank <- function(obj, annotate = F){
   d_f_rep$feature <- factor(d_f_rep$feature, levels=d_f_all$feature)
 
   sig_ann <- plot_annotations(obj)
-  c_title <- paste(sig_ann$title, "Frequency Rank Plot")
+  c_title <- paste("Frequency Rank Plot | ", sig_ann$title)
   c_annotation <- sig_ann$annotation
   c_title_sub <- paste("Distribution Among", n_reps, "Replicates")
   

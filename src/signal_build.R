@@ -30,18 +30,22 @@ signal_build <- function(obj,
                    f_models = c(list("svm01" = function(...) svmt(...)))
 ){
 
+  cat(" selection .. ")
   # run feature selection
   obj <- feature_select(obj)
 
+  cat(" classification .. ")
   # run classification
   obj <- model_classification(obj)
 
+  cat(" performance estimation .. ")
   #run ROC performance estimation
   obj <- signal_roc(obj)
   
   # build the final feature frequency
   obj <- signal_final_freq(obj)
-  
+
+  cat(" build final model .. ")
   # build the final model
   obj <- signal_final_model(obj)
   

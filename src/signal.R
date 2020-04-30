@@ -43,7 +43,7 @@ source("./src/model_classification.R")
 
 
 source("./src/signal_initialize.R")
-source("./src/signal_build.R")
+# source("./src/signal_build.R")
 source("./src/signal_roc.R")
 source("./src/signal_finalize.R")
 
@@ -196,12 +196,47 @@ signal <- function(
   # set up the feature classification
   obj <- set_model_classification(obj, usr_model)
   
+  ######################################################################
+  tmp_start_time <- Sys.time()
   # RUN the classification
-  obj <- signal_build(obj)
+  cat("\n\tselection .. ")
+  # run feature selection
+  obj <- feature_select(obj)
+  tmp_time <- (Sys.time() - tmp_start_time)
+  cat(tmp_time, attr(tmp_time,"units"))
   
+  tmp_start_time <- Sys.time()
+  cat("\n\tclassification .. ")
+  # run classification
+  obj <- model_classification(obj)
+  tmp_time <- (Sys.time() - tmp_start_time)
+  cat(tmp_time, attr(tmp_time,"units"))
+  
+  tmp_start_time <- Sys.time()
+  cat("\n\tperformance estimation .. ")
+  #run ROC performance estimation
+  obj <- signal_roc(obj)
+  tmp_time <- (Sys.time() - tmp_start_time)
+  cat(tmp_time, attr(tmp_time,"units"))
+  
+  tmp_start_time <- Sys.time()
+  cat("\n\tbuild final model .. ")
+  # build the final feature frequency
+  obj <- signal_final_freq(obj)
+  
+  # build the final model
+  obj <- signal_final_model(obj)
+  tmp_time <- (Sys.time() - tmp_start_time)
+  cat(tmp_time, attr(tmp_time,"units"))
+  
+  cat("\n\ttotal time .. ")
   obj$timing$duration <- (Sys.time() - lm_start_time)
   cat(obj$timing$duration, 
-      attr(obj$timing$duration,"units"), "\n")
+      attr(obj$timing$duration,"units"), "\n\n")
+  
+  obj$timing$end <- Sys.time()
+  
+  ######################################################################
   
   auc_mean_best <- 0
   for(nf in n_sel_features){

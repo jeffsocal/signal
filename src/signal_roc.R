@@ -47,14 +47,18 @@ signal_roc <- function(obj){
         pred <- as.vector(unlist(this_pred))
         v_smpl <- c(v_smpl, as.numeric(as.character(smpl)) )
         v_pred <- c(v_pred, pred )
+        
       }
       
       d_pred[[r]] <- data.frame(
         sample = v_smpl, 
         pred = v_pred,
-        rep = r) %>% mutate(rep = as.character(rep))
+        rep = r) %>% 
+        mutate(rep = as.character(rep))
       
     }
+    
+    d_pred_names <- names(d_pred)
     
     d_pred <- d_pred %>% 
       bind_rows() %>%
@@ -65,7 +69,7 @@ signal_roc <- function(obj){
       spread(key='rep', value='pred') %>%
       as.data.frame()
     
-    m_roc <- as.matrix(d_pred[,names(obj$results)])
+    m_roc <- as.matrix(d_pred[,d_pred_names])
     suppressWarnings(storage.mode(m_roc) <- "numeric")
     m_obs <- matrix(as.numeric(d_pred[,'obs']), nrow=dim(m_roc)[1], ncol=dim(m_roc)[2])
     

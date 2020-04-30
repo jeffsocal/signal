@@ -65,11 +65,19 @@ signal_final_model <- function(obj){
   dat               <- obj$inputs$data
   nfs               <- obj$inputs$nfeatures
   
-  fea              <- obj$final$features$feature
+  fea               <- obj$final$features$feature
+  
+  v_fold            <- obj$results[[1]]$foldAssigments[[1]]
+  
+  # d_train            <- dat[-v_fold,]
+  # d_test             <- dat[v_fold,]
+  
+  d_train            <- d_test <- dat
   
   # preprocess on training data, apply to both
-  f_preprocess      <- preProcess(dat, c('center', 'scale'))
-  d_tr              <- predict(f_preprocess, dat)
+  f_preprocess      <- preProcess(d_train, c('center', 'scale'))
+  d_tr              <- predict(f_preprocess, d_train)
+  d_ts              <- predict(f_preprocess, d_test)
   
   obj$final$classifier <- list()
   for(nf in nfs){
@@ -77,7 +85,7 @@ signal_final_model <- function(obj){
     out_model <- classifier_model(v_features=fea[1:nf],
                                   c_predict=prd,
                                   d_train=d_tr,
-                                  d_test=d_tr)
+                                  d_test=d_ts)
     
     cls <- list()
     cls$model <- out_model

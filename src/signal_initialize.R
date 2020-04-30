@@ -67,7 +67,7 @@ signal_initalize <- function(d_data,
     this_rep <- paste0("REP", str_pad(i, width=2, pad='0'))
     obj$results[[this_rep]] <- l_folds
     
-    if(!is.null(c_split) & c_split %in% colnames(d_data) ){
+    if(!is.null(c_split) && c_split %in% colnames(d_data) ){
       obj$inputs$split <- paste("xfolds split on id:", c_split)
       l_foldassign <- createFoldsFromID(d_data[,c_split],
                                         k = n_folds,

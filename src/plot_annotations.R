@@ -14,8 +14,9 @@
 
 library(ggplot2)
 library(tidyverse)
+library(cvAUC)
 
-plot_annotations <- function(obj){
+plot_annotations <- function(obj, features = 2, conf_level = 0.9){
   out <- list()
   out$title <- paste(obj$userInfo$project)
   
@@ -27,11 +28,15 @@ plot_annotations <- function(obj){
   }
   out$annotation <- sub("\n$", "", out$annotation)
   
-  out$title_sub <- paste(
-    "AUC ",
-    "MEDIAN:", round(median(obj$performance$roc_auc),3),
-    " MEAN:", round(mean(obj$performance$roc_auc),3),
-    "-/+ ", round(sd(obj$performance$roc_auc),3)
+  
+  auc_ci <- ci.cvAUC(obj$performance[[features]]$roc_pred@predictions, 
+                     obj$performance[[features]]$roc_pred@labels,
+                     confidence = conf_level)
+  
+  out$title_sub <- paste0(
+    "AUC ", signif(auc_ci$cvAUC,3), "  ",
+    signif(conf_level* 100, 2), "% CI:", 
+    signif(auc_ci$ci[1],3), " - ", signif(auc_ci$ci[2],3)
   )
   
   return(out)

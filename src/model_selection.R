@@ -106,8 +106,12 @@ feature_select <- function(obj,
   
   # one of the selection methods should advantage the cores
   n_sel_cores = obj$inputs$cores
-  if(max(unlist(obj$inputs$fselParallel)) > 1)
+  if(max(unlist(obj$inputs$fselParallel)) > 1){
     n_sel_cores = 1
+    cat(paste0(max(unlist(obj$inputs$fselParallel)), "||func .. "))
+  } else {
+    cat(paste0(n_sel_cores, "||cv-splits .. "))
+  }
   
   l_features <- mclapply(i_rf,
                          fsel_parallel,

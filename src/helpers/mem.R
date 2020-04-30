@@ -10,11 +10,11 @@
 # OWNER:    SoCal Bioinofrmatics Inc
 ################################################################################
 
-library(pryr)
-
-memsize <- function(dig=2){
-  
-  x <- as.numeric(mem_used()) / 10^9
-  
-  return(paste(round(x,dig), "Gb"))
-}
+# library(pryr)
+# 
+# memsize <- function(dig=2){
+#   
+#   x <- as.numeric(mem_used()) / 10^9
+#   
+#   return(paste(round(x,dig), "Gb"))
+# }
